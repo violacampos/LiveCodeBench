@@ -14,8 +14,10 @@ class VLLMRunner(BaseRunner):
         model_tokenizer_path = (
             model.model_name if args.local_model_path is None else args.local_model_path
         )
+        
         self.llm = LLM(
             model=model_tokenizer_path,
+            task='reward' if args.use_reward_model else 'auto',
             tokenizer=model_tokenizer_path,
             tensor_parallel_size=args.tensor_parallel_size,
             dtype=args.dtype,
@@ -24,6 +26,7 @@ class VLLMRunner(BaseRunner):
             enable_prefix_caching=args.enable_prefix_caching,
             trust_remote_code=args.trust_remote_code,
         )
+        
         self.sampling_params = SamplingParams(
             n=self.args.n,
             max_tokens=self.args.max_tokens,
@@ -32,6 +35,7 @@ class VLLMRunner(BaseRunner):
             frequency_penalty=0,
             presence_penalty=0,
             stop=self.args.stop,
+            logprobs=10,
         )
 
     def _run_single(self, prompt: str) -> list[str]:
@@ -49,7 +53,22 @@ class VLLMRunner(BaseRunner):
             remaining_prompts.append(prompt)
             remaining_indices.append(prompt_index)
         if remaining_prompts:
-            vllm_outputs = self.llm.generate(remaining_prompts, self.sampling_params)
+            if self.args.use_reward_model:
+                assert hasattr(self, "reward_llm")
+                # compute hidden states for reward model
+                vllm_hidden_states = self.llm.encode(remaining_prompts)
+                if self.args.use_cache:
+                    assert len(remaining_prompts) == len(vllm_hidden_states)
+                    for index, remaining_prompt, vllm_hidden_state in zip(
+                        remaining_indices, remaining_prompts, vllm_hidden_states
+                    ):
+                        self.cache[remaining_prompt] = [o.text for o in vllm_hidden_state.outputs]
+                        outputs[index] = [o.text for o in vllm_hidden_state.outputs]
+                else:
+                    for index, vllm_hidden_state in zip(remaining_indices, vllm_hidden_states):
+                        outputs[index] = [o.text for o in vllm_hidden_state.outputs]
+            else:
+                vllm_outputs = self.llm.generate(remaining_prompts, self.sampling_params)
             if self.args.use_cache:
                 assert len(remaining_prompts) == len(vllm_outputs)
                 for index, remaining_prompt, vllm_output in zip(

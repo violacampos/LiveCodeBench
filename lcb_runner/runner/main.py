@@ -102,6 +102,40 @@ def main():
     #                 # combined_results[i][1][j] += "\n\nsolve()"
     #                 print(combined_results[i][1][j])
 
+
+    if args.get_hidden_states:
+
+        # check for existing generations whether hidden states are already present
+        save_hs_results = [
+            instance
+            for instance in save_results
+            if instance["hidden_state_list"] and [x for x in instance["hidden_state_list"] if x]
+        ]
+        save_hs_results_question_ids = [
+            instance["question_id"] for instance in save_hs_results
+        ]
+        remaining_benchmark = [
+            instance
+            for instance in benchmark
+            if instance.question_id not in save_hs_results_question_ids
+        ]
+        print(
+            f"Found {len(save_hs_results)} existing generations, continuing with {len(remaining_benchmark)} remaining"
+        )
+    else:
+        save_hs_results = []
+        remaining_benchmark = benchmark
+
+    if len(remaining_benchmark) > 0:
+        args.use_reward_model = True
+        runner = build_runner(args, model)
+        results: list[list[str]] = runner.run_main(remaining_benchmark, format_prompt)
+    else:
+        results = []
+        # generate for first and last token only
+        pass
+
+
     if args.evaluate:
         if args.continue_existing_with_eval and os.path.exists(eval_all_file):
             with open(eval_all_file) as fp:
