@@ -76,6 +76,15 @@ class CodeGenerationProblem:
         self.metadata = json.loads(self.metadata)  # type: ignore
 
     def insert_output(self, output_list: list[str], code_list: list[str]) -> dict:
+        logprobs_list = []
+        if isinstance(output_list, dict):
+            logprobs_list = [
+                    [
+                        {t: v.__dict__ for t, v in l.items() } 
+                    for l in logprobs] 
+                for logprobs in output_list['logprobs']] 
+ 
+            output_list = output_list['text']
         return {
             "question_title": self.question_title,
             "question_content": self.question_content,
@@ -86,6 +95,7 @@ class CodeGenerationProblem:
             "starter_code": self.starter_code,
             "difficulty": self.difficulty.value,
             "output_list": output_list,
+            "logprobs_list": logprobs_list,
             "code_list": code_list,
         }
 
@@ -102,6 +112,21 @@ class CodeGenerationProblem:
         for k, v in kwargs.items():
             output[k] = v
         return output
+    
+    def insert_output_hidden_states(
+        self,
+        output_list: list[str],
+        code_list: list[str],
+        hidden_state_list: list[list[float]],
+        **kwargs,
+    ) -> dict:
+        output = self.insert_output(output_list, code_list)
+        output["hidden_states"] = hidden_state_list
+        for k, v in kwargs.items():
+            output[k] = v
+        return output
+   
+
 
     def get_evaluation_sample(self):
         return {

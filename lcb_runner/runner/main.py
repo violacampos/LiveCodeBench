@@ -78,15 +78,7 @@ def main():
         )
     ]
 
-    if args.continue_existing or args.continue_existing_with_eval:
-        save_results += old_save_results
-
-    save_results, combined_results = sort_and_extract_save_results(
-        args.scenario, save_results
-    )
-
-    with open(output_path, "w") as f:
-        json.dump(save_results, f, indent=4)
+    
 
     # for i in range(len(combined_results)):
     #     for j in range(len(combined_results[i][1])):
@@ -109,7 +101,7 @@ def main():
         save_hs_results = [
             instance
             for instance in save_results
-            if instance["hidden_state_list"] and [x for x in instance["hidden_state_list"] if x]
+            if "hidden_state_list" in instance and [x for x in instance["hidden_state_list"] if x]
         ]
         save_hs_results_question_ids = [
             instance["question_id"] for instance in save_hs_results
@@ -120,20 +112,41 @@ def main():
             if instance.question_id not in save_hs_results_question_ids
         ]
         print(
-            f"Found {len(save_hs_results)} existing generations, continuing with {len(remaining_benchmark)} remaining"
+            f"Found {len(save_hs_results)} existing generations with hidden states, continuing with {len(remaining_benchmark)} remaining"
         )
-    else:
-        save_hs_results = []
-        remaining_benchmark = benchmark
+    
 
-    if len(remaining_benchmark) > 0:
-        args.use_reward_model = True
-        runner = build_runner(args, model)
-        results: list[list[str]] = runner.run_main(remaining_benchmark, format_prompt)
-    else:
-        results = []
-        # generate for first and last token only
-        pass
+        if len(remaining_benchmark) > 0:
+            args.get_hidden_states = True
+            runner = build_runner(args, model)
+            hidden_states: list[list[str]] = runner.run_main(remaining_benchmark, format_prompt)
+        else:
+            hidden_states = []
+            # TODO generate for first and last token only
+        
+        # TODO combined_results = combine_results(
+        #    args.scenario, results, model, args.cot_code_execution
+        #)
+
+        save_results = [
+            instance.insert_output_hidden_states(outputs_list, extracted_list, hidden_state_list)
+            for instance, (outputs_list, extracted_list, hidden_state_list) in zip(
+                remaining_benchmark, combined_results, hidden_states
+            )
+        ]
+        
+    if args.continue_existing or args.continue_existing_with_eval:
+        save_results += old_save_results
+
+    save_results, combined_results = sort_and_extract_save_results(
+        args.scenario, save_results
+    )
+
+    with open(output_path, "w") as f:
+        json.dump(save_results, f, indent=4)    
+        
+
+
 
 
     if args.evaluate:

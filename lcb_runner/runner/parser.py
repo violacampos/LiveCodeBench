@@ -85,6 +85,17 @@ def get_args():
     parser.add_argument("--debug", action="store_true", help="Debug mode")
     parser.add_argument("--evaluate", action="store_true", help="Evaluate the results")
     parser.add_argument(
+        "--get_hidden_states",
+        action="store_true",
+        help="use reward model to get hidden states",
+    )
+    parser.add_argument(
+        "--get_logprobs",
+        action="store_true",
+        help="Save logprobs along with generations",
+    )
+
+    parser.add_argument(
         "--num_process_evaluate",
         type=int,
         default=12,

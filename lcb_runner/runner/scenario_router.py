@@ -82,18 +82,27 @@ def build_prompt_benchmark(
 
 def combine_results(
     scenario: Scenario,
-    results: list[list[str]],
+    results: list[list[str]] | list[dict],
     model: LanguageModel,
     cot_code_execution: bool = False,
 ):
     if scenario == Scenario.codegeneration:
-        combined_results = [
+        if isinstance(results[0], dict):
+            combined_results = [
             (
-                outputs_list,
-                [extract_code(output, model.model_style) for output in outputs_list],
+                outputs_dict,
+                [extract_code(output, model.model_style) for output in outputs_dict['text']],
             )
-            for outputs_list in results
+            for outputs_dict in results
         ]
+        else:
+            combined_results = [
+                (
+                    outputs_list,
+                    [extract_code(output, model.model_style) for output in outputs_list],
+                )
+                for outputs_list in results
+            ]
     elif scenario == Scenario.testoutputprediction:
         combined_results = [
             (
