@@ -161,6 +161,17 @@ def load_code_generation_dataset(release_version="release_v1", start_date=None, 
     return dataset
 
 
+def load_mceval_dataset() -> list[CodeGenerationProblem]:
+    dataset = load_dataset("Multilingual-Multimodal-NLP/McEval", "generation")
+    # TODO
+    #dataset = [CodeGenerationProblem(**p) for p in dataset]  # type: ignore
+    
+
+    print(f"Loaded {len(dataset)} problems")
+    return dataset
+
+
+
 def load_code_generation_dataset_not_fast(release_version="release_v1") -> list[CodeGenerationProblem]:
     dataset = load_dataset("livecodebench/code_generation", split="test")
     dataset = [CodeGenerationProblem(**p) for p in dataset]  # type: ignore
