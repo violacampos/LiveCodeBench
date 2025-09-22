@@ -1,7 +1,9 @@
 import os
-import json
+import orjson
+import tqdm
 
 from lcb_runner.runner.parser import get_args
+from lcb_runner.utils.dict_utils import stringify_keys, write_to_json
 from lcb_runner.utils.scenarios import Scenario
 from lcb_runner.lm_styles import LanguageModelStore
 from lcb_runner.runner.runner_utils import build_runner
@@ -30,11 +32,11 @@ def main():
 
     if args.continue_existing or args.continue_existing_with_eval:
         if os.path.exists(output_path):
-            with open(output_path, "r") as f:
-                old_save_results = json.load(f)
+            with open(output_path, "rb") as f:
+                old_save_results = orjson.loads(f.read())
         elif os.path.exists(eval_all_file):
-            with open(eval_all_file, "r") as f:
-                old_save_results = json.load(f)
+            with open(eval_all_file, "rb") as f:
+                old_save_results = orjson.loads(f.read())
         else:
             print(
                 f"File {output_path} does not exist in --continue_existing, starting from scratch"
@@ -72,8 +74,8 @@ def main():
     )
 
     save_results = [
-        instance.insert_output(outputs_list, extracted_list)
-        for instance, (outputs_list, extracted_list) in zip(
+        instance.insert_output(outputs_list, extracted_list, logprobs_list)
+        for instance, (outputs_list, extracted_list, logprobs_list) in zip(
             remaining_benchmark, combined_results
         )
     ]
@@ -129,8 +131,8 @@ def main():
         #)
 
         save_results = [
-            instance.insert_output_hidden_states(outputs_list, extracted_list, hidden_state_list)
-            for instance, (outputs_list, extracted_list, hidden_state_list) in zip(
+            instance.insert_output_hidden_states(outputs_list, extracted_list, logprobs_list, hidden_state_list)
+            for instance, (outputs_list, extracted_list, logprobs_list, hidden_state_list) in zip(
                 remaining_benchmark, combined_results, hidden_states
             )
         ]
@@ -141,22 +143,20 @@ def main():
     save_results, combined_results = sort_and_extract_save_results(
         args.scenario, save_results
     )
+    
+    
 
-    with open(output_path, "w") as f:
-        json.dump(save_results, f, indent=4)    
-        
-
-
+    write_to_json(save_results, output_path)
 
 
     if args.evaluate:
         if args.continue_existing_with_eval and os.path.exists(eval_all_file):
-            with open(eval_all_file) as fp:
-                old_eval_all_results = json.load(fp)
+            with open(eval_all_file, "rb") as fp:
+                old_eval_all_results = orjson.loads(fp.read())
 
             if os.path.exists(eval_file):
-                with open(eval_file) as fp:
-                    old_eval_results = json.load(fp)
+                with open(eval_file, "rb") as fp:
+                    old_eval_results = orjson.loads(fp.read())
             else:
                 old_eval_results = None
 
@@ -216,9 +216,9 @@ def main():
                 metadatas = [[] for _ in benchmark]
             save_eval_results = [
                 instance.insert_output_evaluation(
-                    outputs_list, extracted_list, graded_list, metadata=meta
+                    outputs_list, extracted_list, logprobs_list, graded_list, metadata=meta
                 )
-                for instance, (outputs_list, extracted_list), graded_list, meta in zip(
+                for instance, (outputs_list, extracted_list, logprobs_list), graded_list, meta in zip(
                     benchmark, combined_results, graded, metadatas
                 )
             ]
@@ -228,9 +228,9 @@ def main():
         elif args.scenario == Scenario.selfrepair:
             metadatas = metrics[2]
             with open(
-                f"output/{model.model_repr}/{Scenario.codegeneration}_{args.codegen_n}_{args.temperature}_eval_all.json"
+                f"output/{model.model_repr}/{Scenario.codegeneration}_{args.codegen_n}_{args.temperature}_eval_all.json", "rb"
             ) as f:
-                code_gen_evals = json.load(f)
+                code_gen_evals = orjson.loads(f.read())
             original_code_lists = [
                 code_gen_eval["code_list"] for code_gen_eval in code_gen_evals
             ]
@@ -239,6 +239,7 @@ def main():
                 instance.insert_output_evaluation(
                     outputs_list,
                     extracted_list,
+                    logprobs_list,
                     graded_list,
                     metadata=meta,
                     original_code_list=original_code_list,
@@ -246,6 +247,7 @@ def main():
                 for instance, (
                     outputs_list,
                     extracted_list,
+                    logprobs_list,
                 ), graded_list, meta, original_code_list in zip(
                     benchmark, combined_results, graded, metadatas, original_code_lists
                 )
@@ -254,20 +256,18 @@ def main():
         else:
             save_eval_results = [
                 instance.insert_output_evaluation(
-                    outputs_list, extracted_list, graded_list
+                    outputs_list, extracted_list, logprobs_list, graded_list
                 )
-                for instance, (outputs_list, extracted_list), graded_list in zip(
+                for instance, (outputs_list, extracted_list, logprobs_list), graded_list in zip(
                     benchmark, combined_results, graded
                 )
             ]
 
         save_eval_results = old_eval_all_results + save_eval_results
+        
+        write_to_json(metrics, eval_file)
 
-        with open(eval_file, "w") as f:
-            json.dump(metrics, f, indent=4)
-
-        with open(eval_all_file, "w") as f:
-            json.dump(save_eval_results, f, indent=4)
+        write_to_json(save_eval_results, eval_all_file)
 
 
 if __name__ == "__main__":

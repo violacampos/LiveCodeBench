@@ -75,16 +75,15 @@ class CodeGenerationProblem:
 
         self.metadata = json.loads(self.metadata)  # type: ignore
 
-    def insert_output(self, output_list: list[str], code_list: list[str]) -> dict:
-        logprobs_list = []
-        if isinstance(output_list, dict):
-            logprobs_list = [
-                    [
-                        {t: v.__dict__ for t, v in l.items() } 
-                    for l in logprobs] 
-                for logprobs in output_list['logprobs']] 
+    def insert_output(self, output_list: list[str], code_list: list[str], logprobs_list: list[list[dict]]) -> dict:
+        # if isinstance(output_list, dict):
+        #     logprobs_list = [
+        #             [
+        #                 {t: v.__dict__ for t, v in l.items() } 
+        #             for l in logprobs] 
+        #         for logprobs in output_list['logprobs']] 
  
-            output_list = output_list['text']
+        #     output_list = output_list['text']
         return {
             "question_title": self.question_title,
             "question_content": self.question_content,
@@ -103,10 +102,11 @@ class CodeGenerationProblem:
         self,
         output_list: list[str],
         code_list: list[str],
+        logprobs_list: list[list[dict]],
         graded_list: list[bool],
         **kwargs,
     ) -> dict:
-        output = self.insert_output(output_list, code_list)
+        output = self.insert_output(output_list, code_list, logprobs_list)
         output["graded_list"] = graded_list
         output["pass@1"] = graded_list.count(True) / len(graded_list)
         for k, v in kwargs.items():
@@ -117,10 +117,11 @@ class CodeGenerationProblem:
         self,
         output_list: list[str],
         code_list: list[str],
+        logprobs_list: list[list[dict]],
         hidden_state_list: list[list[float]],
         **kwargs,
     ) -> dict:
-        output = self.insert_output(output_list, code_list)
+        output = self.insert_output(output_list, code_list, logprobs_list)
         output["hidden_states"] = hidden_state_list
         for k, v in kwargs.items():
             output[k] = v

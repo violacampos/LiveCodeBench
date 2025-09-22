@@ -44,7 +44,7 @@ def compute_metrics_from_results(results, k_list=[1, 5]):
         if (total >= k).all()
     }
     pass_at_k = {
-        f"pass@{k}": estimate_pass_at_k(total, correct, k).mean()
+        f"pass@{k}": float(estimate_pass_at_k(total, correct, k).mean())
         for k in ks
         if (total >= k).all()
     }

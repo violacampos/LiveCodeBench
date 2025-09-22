@@ -90,8 +90,9 @@ def combine_results(
         if isinstance(results[0], dict):
             combined_results = [
             (
-                outputs_dict,
+                outputs_dict['text'],
                 [extract_code(output, model.model_style) for output in outputs_dict['text']],
+                outputs_dict['logprobs'] if 'logprobs' in outputs_dict else None
             )
             for outputs_dict in results
         ]
@@ -100,6 +101,7 @@ def combine_results(
                 (
                     outputs_list,
                     [extract_code(output, model.model_style) for output in outputs_list],
+                    None
                 )
                 for outputs_list in results
             ]
@@ -129,6 +131,7 @@ def combine_results(
                     )
                     for output in outputs_list
                 ],
+                None
             )
             for outputs_list in results
         ]
@@ -142,6 +145,7 @@ def combine_results(
                     )
                     for output in outputs_list
                 ],
+                None
             )
             for outputs_list in results
         ]
@@ -155,7 +159,9 @@ def sort_and_extract_save_results(scenario: Scenario, save_results: list[dict]):
     if scenario == Scenario.codegeneration:
         save_results = sorted(save_results, key=lambda x: x["question_id"])
         combined_results = [
-            (save_result_instance["output_list"], save_result_instance["code_list"])
+            (save_result_instance["output_list"], 
+             save_result_instance["code_list"], 
+             save_result_instance["logprobs_list"])
             for save_result_instance in save_results
         ]
 
@@ -164,19 +170,19 @@ def sort_and_extract_save_results(scenario: Scenario, save_results: list[dict]):
             save_results, key=lambda x: (x["question_id"], x["test_id"])
         )
         combined_results = [
-            (save_result_instance["output_list"], save_result_instance["pred_list"])
+            (save_result_instance["output_list"], save_result_instance["pred_list"], save_result_instance["logprobs_list"])
             for save_result_instance in save_results
         ]
     elif scenario == Scenario.selfrepair:
         save_results = sorted(save_results, key=lambda x: x["question_id"])
         combined_results = [
-            (save_result_instance["output_list"], save_result_instance["code_list"])
+            (save_result_instance["output_list"], save_result_instance["code_list"], save_result_instance["logprobs_list"])
             for save_result_instance in save_results
         ]
     elif scenario == Scenario.codeexecution:
         save_results = sorted(save_results, key=lambda x: int(x["id"].split("_")[1]))
         combined_results = [
-            (save_result_instance["output_list"], save_result_instance["pred_list"])
+            (save_result_instance["output_list"], save_result_instance["pred_list"], save_result_instance["logprobs_list"])
             for save_result_instance in save_results
         ]
 
@@ -195,7 +201,7 @@ def get_metrics(
     combined_results,
 ):
     eval_samples = [instance.get_evaluation_sample() for instance in benchmark]
-    generations = [extracted for _, extracted in combined_results]
+    generations = [extracted for _, extracted, _ in combined_results]
 
     if scenario == Scenario.codegeneration or scenario == Scenario.selfrepair:
         metrics = codegen_metrics(
