@@ -35,7 +35,7 @@ class VLLMRunner(BaseRunner):
             frequency_penalty=0,
             presence_penalty=0,
             stop=self.args.stop,
-            logprobs=10,
+            logprobs=self.args.num_logprobs,
         )
 
     def _run_single(self, prompt: str) -> list[str]:

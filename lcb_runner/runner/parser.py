@@ -96,6 +96,13 @@ def get_args():
     )
 
     parser.add_argument(
+        "--num_logprobs",
+        type=int,
+        default=20,
+        help="Number of top-k logprobs to save",
+    )
+
+    parser.add_argument(
         "--num_process_evaluate",
         type=int,
         default=12,
