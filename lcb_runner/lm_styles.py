@@ -693,6 +693,13 @@ LanguageModelList: list[LanguageModel] = [
         link="https://huggingface.co/Qwen/Qwen3-235B-A22B",
     ),
     LanguageModel(
+        "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+        "Qwen3-Coder-30B-A3B",
+        LMStyle.CodeQwenInstruct,
+        datetime(2024, 6, 30),
+        link="https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct",
+    ),
+    LanguageModel(
         "azerogpt",
         "AzeroGPT-64b",
         LMStyle.CodeQwenInstruct,
@@ -861,6 +868,13 @@ LanguageModelList: list[LanguageModel] = [
         datetime(2024, 4, 1),
         "https://huggingface.co/agentica-org/DeepCoder-14B-Preview",
     ),
+    LanguageModel(
+        "openai/gpt-oss-20b",
+        "GPT-OSS-20B",
+        LMStyle.CodeQwenInstruct,
+        datetime(2024, 6, 1),
+        "https://huggingface.co/openai/gpt-oss-20b",
+    )
 ]
 
 LanguageModelStore: dict[str, LanguageModel] = {

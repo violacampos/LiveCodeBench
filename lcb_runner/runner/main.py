@@ -149,6 +149,10 @@ def main():
     write_to_json(save_results, output_path)
 
 
+    # Free GPU memory
+    del runner
+    #torch.cuda.empty_cache()
+
     if args.evaluate:
         if args.continue_existing_with_eval and os.path.exists(eval_all_file):
             with open(eval_all_file, "rb") as fp:
