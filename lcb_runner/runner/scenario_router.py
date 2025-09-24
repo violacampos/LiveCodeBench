@@ -87,7 +87,7 @@ def combine_results(
     cot_code_execution: bool = False,
 ):
     if scenario == Scenario.codegeneration:
-        if isinstance(results[0], dict):
+        if len(results) > 0 and isinstance(results[0], dict):
             combined_results = [
             (
                 outputs_dict['text'],
