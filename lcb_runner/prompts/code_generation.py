@@ -30,11 +30,13 @@ class PromptConstants:
         "The user asks a question, and the Assistant solves it. "
         "The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. "
         "The reasoning process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., <think> reasoning process here </think> <answer> answer here </answer>.<｜User｜>"
+        #"You are a helpful AI programming assistant, and you answer questions related to coding problems."
+        #"First think about the question and then provide the user with the code that solves the problem. "
     )
 
     FORMATTING_MESSAGE_WITH_STARTER_CODE = "You will use the following starter code to write the solution to the problem and enclose your code within delimiters."
 
-    FORMATTING_WITHOUT_STARTER_CODE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Enclose your code within delimiters as follows. Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT."
+    FORMATTING_WITHOUT_STARTER_CODE = "Read the inputs from stdin solve the problem and write the answer to stdout (do not directly test on the sample inputs). Ensure that when the python program runs, it reads the inputs, runs the algorithm and writes output to STDOUT. Enclose your code within ``` delimiters as follows: "
 
 
 def get_generic_question_template_answer(question: CodeGenerationProblem):

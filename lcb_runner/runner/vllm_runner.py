@@ -25,6 +25,7 @@ class VLLMRunner(BaseRunner):
             disable_custom_all_reduce=True,
             enable_prefix_caching=args.enable_prefix_caching,
             trust_remote_code=args.trust_remote_code,
+            max_model_len=105000 # for testing purpose (Llama3-70B)
         )
         
         self.sampling_params = SamplingParams(
